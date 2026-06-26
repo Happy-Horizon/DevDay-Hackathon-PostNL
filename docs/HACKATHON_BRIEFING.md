@@ -5,6 +5,12 @@
 
 ---
 
+## Demo — startpunt
+
+<video src="./demo.mov" controls width="100%" style="border-radius:8px;max-width:800px"></video>
+
+---
+
 ## De uitdaging
 
 Conversational interfaces bij PostNL praten nu vooral in tekst. Maar wat als de interface zichzelf genereert op basis van context? Eén bericht — _"Ik wil een pakket versturen"_ — en het systeem stelt automatisch de juiste interface samen, met de juiste interactiepatronen, volledig binnen het PostNL design system.
