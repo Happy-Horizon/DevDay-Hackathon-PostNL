@@ -7,7 +7,7 @@
 
 ## Demo — startpunt
 
-<video src="./demo.mov" controls width="100%" style="border-radius:8px;max-width:800px"></video>
+![Demo — startpunt](./demo.gif)
 
 ---
 
