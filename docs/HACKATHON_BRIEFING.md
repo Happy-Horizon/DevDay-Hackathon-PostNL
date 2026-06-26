@@ -270,17 +270,14 @@ Laat de agent bij ontbrekende informatie doorvragen voordat hij componenten rend
 
 ## Opzet van de hackathon-dag
 
-| Tijd | Activiteit |
-|---|---|
-| 09:00 | Kick-off & uitleg van de challenge |
-| 09:30 | Teams instellen, repos forken, dev-omgeving opzetten |
-| 10:00 | Bouw-sessie deel 1: catalogus en pipeline |
-| 12:00 | Lunch |
-| 13:00 | Bouw-sessie deel 2: verfijning en validatie |
-| 15:30 | Demo's voorbereiden |
-| 16:00 | Presentaties (5 min per team) |
-| 16:45 | Beoordeling & awards |
-| 17:00 | Afsluiting |
+1. Kick-off & uitleg van de challenge
+2. Teams instellen, repos forken, dev-omgeving opzetten
+3. Bouw-sessie deel 1: catalogus en pipeline
+4. Lunch
+5. Bouw-sessie deel 2: verfijning en validatie
+6. Demo's voorbereiden
+7. Presentaties (5 min per team)
+8. Beoordeling, awards & afsluiting
 
 ---
 
