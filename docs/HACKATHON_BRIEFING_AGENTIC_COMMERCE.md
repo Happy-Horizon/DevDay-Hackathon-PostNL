@@ -59,7 +59,6 @@ Op hackathon-dag krijg je per team een **voorgeconfigureerde OpenClaw-omgeving o
 | E-commerce backend + testcatalogus | ✅ Beschikbaar |
 | PostNL Checkout module | ✅ Geïnstalleerd |
 | Agent Commerce Engine skill | ✅ Ingeladen |
-| PostNL MCP-server (verzending & tracking) | ✅ Beschikbaar |
 | Team-credentials & toegang | 📋 Van coördinator op de dag |
 
 Je hoeft **geen** cloud-infrastructuur op te zetten. Focus op de agent, de flow en de user-in-the-loop.
@@ -248,39 +247,6 @@ De skill staat in `SKILL.md` op je gateway. OpenClaw leest die instructies en we
 - Niet te snel bestelt (eerst bevestigen!)
 - Varianten correct kiest uit de beschikbare opties
 - De payment URL duidelijk overdraagt aan de gebruiker
-
----
-
-## PostNL MCP-server
-
-Voor alles rond **verzending en bezorging** heb je `postnl-mcp` beschikbaar. Relevante tools:
-
-| Tool | Wanneer gebruiken |
-|---|---|
-| `calculate_delivery_date` | "Wanneer is het er?" — levertijd op basis van postcode |
-| `find_locations` | Dichtstbijzijnde ServicePunt of pakketautomaat |
-| `track_shipment` | Status van een bestaande zending |
-| `create_shipment` | (Geavanceerd) Zending aanmaken na order |
-
-### MCP-configuratie (referentie)
-
-```json
-{
-  "mcpServers": {
-    "postnl-mcp": {
-      "command": "npx",
-      "args": ["-y", "postnl-mcp"],
-      "env": {
-        "POSTNL_API_KEY": "<van coördinator>",
-        "POSTNL_CUSTOMER_CODE": "<van coördinator>",
-        "POSTNL_CUSTOMER_NUMBER": "<van coördinator>"
-      }
-    }
-  }
-}
-```
-
-Combineer commerce (wat) met PostNL (hoe het aankomt) voor een complete journey.
 
 ---
 
