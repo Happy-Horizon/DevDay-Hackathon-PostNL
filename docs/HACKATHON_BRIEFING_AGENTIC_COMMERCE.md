@@ -1,5 +1,7 @@
 # Hackathon — Agentic Commerce × PostNL
 
+![OpenClaw Control UI](openclaw-control-ui.png)
+
 > **Laat een agent een complete bestelling afronden — zonder dat er ooit een webshop in beeld komt.**
 
 ---
@@ -165,8 +167,6 @@ E-commerce API  +  PostNL Checkout  →  bevestiging in PostNL-app
 ---
 
 ## OpenClaw + Gemini configuratie
-
-![OpenClaw Control UI](openclaw-control-ui.png)
 
 De gateway is voorgeconfigureerd. Ter referentie — dit staat in `openclaw.json` op je instance:
 
