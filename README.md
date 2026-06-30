@@ -74,4 +74,9 @@ User message → POST /api/chat
 
 ## Hackathon
 
-See [`docs/HACKATHON_BRIEFING.md`](docs/HACKATHON_BRIEFING.md) for the full challenge description, extension points, and the A2UI migration guide.
+DevDay 2026 has two PostNL hackathon tracks:
+
+| Track | Briefing |
+|---|---|
+| **Agent-to-UI × PostNL** (this repo) | [`docs/HACKATHON_BRIEFING.md`](docs/HACKATHON_BRIEFING.md) |
+| **Agentic Commerce × PostNL** (OpenClaw + Gemini) | [`docs/HACKATHON_BRIEFING_AGENTIC_COMMERCE.md`](docs/HACKATHON_BRIEFING_AGENTIC_COMMERCE.md) |
