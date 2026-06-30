@@ -78,7 +78,7 @@ Je hoeft **geen** cloud-infrastructuur op te zetten. Focus op de agent, de flow 
 
 ### Toegang op de dag
 
-De coördinator deelt per team:
+De credentials staan opgeslagen in 1Password: [OpenClaw & API credentials](https://start.1password.com/open/i?a=6B6HH3NZIRBVXC3OSIWHH46Z5M&v=ayckfyn7626ma4tlschgvwmjvi&i=vdjuvmlhbaaxq5ukan4oz66amq&h=happyhorizonbv.1password.eu)
 
 ```bash
 # OpenClaw gateway
@@ -210,6 +210,136 @@ Zonder telefoonnummer of Twilio kun je **Talk** gebruiken in de Control UI:
 
 Gemini Live ondersteunt **function calling over WebSocket**, dus je agent kan tijdens een gesprek producten opzoeken, de cart vullen en je om akkoord vragen.
 
+### Slack-kanaal koppelen
+
+De gateway ondersteunt Slack via **Socket Mode** — geen publieke URL nodig, alleen outbound verbinding naar Slack. Ideaal voor de hackathon-setup.
+
+#### 1. Plugin installeren op de VM
+
+```bash
+gcloud compute ssh root@spawn-hi9y --zone=us-central1-a --project=devday-postnl \
+  --command="source /etc/profile.d/spawn.sh && openclaw plugins install @openclaw/slack"
+```
+
+#### 2. Slack-app aanmaken
+
+Ga naar [api.slack.com/apps](https://api.slack.com/apps) → **Create New App** → **From a manifest** → kies je workspace → plak dit manifest:
+
+```json
+{
+  "display_information": { "name": "OpenClaw" },
+  "features": {
+    "bot_user": { "display_name": "OpenClaw", "always_online": true },
+    "slash_commands": [{ "command": "/openclaw", "description": "Stuur een bericht naar OpenClaw", "should_escape": false }]
+  },
+  "oauth_config": {
+    "scopes": {
+      "bot": ["app_mentions:read", "channels:history", "channels:read", "chat:write", "commands", "groups:history", "im:history", "im:read", "im:write", "users:read"]
+    }
+  },
+  "settings": {
+    "socket_mode_enabled": true,
+    "event_subscriptions": {
+      "bot_events": ["app_mention", "message.channels", "message.groups", "message.im"]
+    }
+  }
+}
+```
+
+Na aanmaken:
+- **Settings → Socket Mode** → schakel in → genereer een **App-Level Token** (scope: `connections:write`) → sla op als `SLACK_APP_TOKEN`
+- **OAuth & Permissions** → **Install to Workspace** → kopieer de **Bot User OAuth Token** → sla op als `SLACK_BOT_TOKEN`
+
+#### 3. Tokens configureren op de VM
+
+```bash
+gcloud compute ssh root@spawn-hi9y --zone=us-central1-a --project=devday-postnl \
+  --command="source /etc/profile.d/spawn.sh && openclaw config patch --stdin << 'EOF'
+{
+  channels: {
+    slack: {
+      enabled: true,
+      mode: \"socket\",
+      appToken: \"<SLACK_APP_TOKEN>\",
+      botToken: \"<SLACK_BOT_TOKEN>\"
+    }
+  }
+}
+EOF
+openclaw daemon restart"
+```
+
+#### 4. Verificatie
+
+Stuur een DM naar je OpenClaw-bot in Slack of gebruik `/openclaw Hallo`. De agent antwoordt met Gemini 2.5 Flash.
+
+> Volledige documentatie: [docs.openclaw.ai/channels/slack](https://docs.openclaw.ai/channels/slack)
+
+---
+
+## Secrets & credentials
+
+Sla API-sleutels **niet als plaintext** op in `openclaw.json`. OpenClaw ondersteunt SecretRefs — waarden worden pas op runtime opgehaald en nooit op disk bewaard.
+
+### Env-variabele (snelste aanpak)
+
+Gebruik `${VARNAME}` of `$VARNAME` als waarde in je config:
+
+```json5
+{
+  models: {
+    providers: {
+      google: {
+        apiKey: "${GOOGLE_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+Stel de variabele in via `~/.openclaw/.env` op de VM (wordt automatisch geladen door de gateway):
+
+```bash
+echo 'GOOGLE_API_KEY=AQ....' >> ~/.openclaw/.env
+```
+
+### 1Password CLI (aanbevolen voor teams)
+
+Als je team 1Password gebruikt, kun je credentials direct ophalen via de `op` CLI:
+
+```json5
+{
+  secrets: {
+    providers: {
+      op_google: {
+        source: "exec",
+        command: "/usr/bin/op",
+        args: ["read", "op://DevDay/OpenClaw Google API Key/password"],
+        passEnv: ["HOME"],
+        jsonOnly: false
+      }
+    }
+  },
+  models: {
+    providers: {
+      google: {
+        apiKey: { source: "exec", provider: "op_google", id: "value" }
+      }
+    }
+  }
+}
+```
+
+### Audit
+
+Controleer of er nog plaintext credentials in je config staan:
+
+```bash
+openclaw secrets audit --check
+```
+
+> Volledige documentatie: [docs.openclaw.ai/gateway/secrets](https://docs.openclaw.ai/gateway/secrets/)
+
 ---
 
 ## Agent Commerce Engine
@@ -333,6 +463,7 @@ Bouw expliciete fallback-paden — dat maakt indruk bij de jury.
 - [PostNL ontwikkelaarsdocumentatie](https://developer.postnl.nl)
 - [Google Gemini API](https://aistudio.google.com) — API-sleutels
 - [Model Context Protocol](https://modelcontextprotocol.io)
+- [1Password — OpenClaw & API credentials](https://start.1password.com/open/i?a=6B6HH3NZIRBVXC3OSIWHH46Z5M&v=ayckfyn7626ma4tlschgvwmjvi&i=vdjuvmlhbaaxq5ukan4oz66amq&h=happyhorizonbv.1password.eu)
 
 ---
 
