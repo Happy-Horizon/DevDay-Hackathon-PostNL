@@ -166,6 +166,8 @@ E-commerce API  +  PostNL Checkout  →  bevestiging in PostNL-app
 
 ## OpenClaw + Gemini configuratie
 
+![OpenClaw Control UI](openclaw-control-ui.png)
+
 De gateway is voorgeconfigureerd. Ter referentie — dit staat in `openclaw.json` op je instance:
 
 ```json
