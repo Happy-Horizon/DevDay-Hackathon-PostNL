@@ -87,8 +87,11 @@ De credentials staan opgeslagen in 1Password: [OpenClaw & API credentials](https
 OPENCLAW_GATEWAY_URL=https://openclaw-<team>.run.app
 OPENCLAW_GATEWAY_TOKEN=<team-token>
 
-# Commerce backend
-COMMERCE_STORE_URL=https://shop-<env>.devday.postnl.local/api/v1
+# Commerce backend (Magento acceptance environment)
+COMMERCE_STORE_URL=https://magento-acc.pricetracking.net
+
+# PostNL Fast Checkout deeplink base
+POSTNL_CHECKOUT_BASE=https://dil-fast-checkout-test.postnl.nl/deeplink/checkout
 
 # Gemini (reeds geconfigureerd op de gateway — alleen nodig voor lokale tests)
 GOOGLE_API_KEY=<optioneel, van coördinator>
@@ -107,12 +110,17 @@ openclaw status --gateway $OPENCLAW_GATEWAY_URL
 # 3. Open de Control UI in je browser
 open $OPENCLAW_GATEWAY_URL/ui
 
-# 4. Test de commerce skill
+# 4. Test de commerce store via GraphQL
+curl -s -G 'https://magento-acc.pricetracking.net/graphql' \
+  --data-urlencode 'query={ products(search: "yoga") { items { __typename sku name price_range { minimum_price { regular_price { value currency } } } } } }' \
+  -H 'Content-Type: application/json'
+
+# 5. Test de commerce skill (als de agent-commerce-engine skill aanwezig is)
 python3 skills/agent-commerce-engine/scripts/commerce.py \
-  --store $COMMERCE_STORE_URL list --limit 5
+  --store $COMMERCE_STORE_URL search "yoga" --limit 5
 ```
 
-**Verificatie:** Je ziet testproducten uit de catalogus en kunt inloggen op de OpenClaw Control UI. In Talk-modus reageert Gemini Live op je stem.
+**Verificatie:** Je ziet testproducten uit de Magento-catalogus op `magento-acc.pricetracking.net` en kunt inloggen op de OpenClaw Control UI. In Talk-modus reageert Gemini Live op je stem.
 
 ---
 
@@ -127,12 +135,11 @@ OpenClaw Gateway  (Google Cloud Run)
     ├── Model: google/gemini-2.5-flash        ← tekst, reasoning, tool calls
     ├── Voice:  Gemini Live API               ← realtime spraak (Talk-modus)
     │
-    ├── Skill: agent-commerce-engine
-    │     └── python3 scripts/commerce.py
-    │           ├── search / list / get       ← productontdekking
-    │           ├── add-cart / cart           ← winkelwagen
-    │           ├── create-order              ← order + payment URL
-    │           └── orders                    ← status & historie
+    ├── Skill: agent-commerce-engine  (magento-acc.pricetracking.net)
+    │     ├── GraphQL /graphql               ← producten zoeken (SimpleProduct filter)
+    │     ├── POST /checkout/cart/add/       ← session-based cart (PHPSESSID)
+    │     ├── GET  /customer/section/load/   ← cart verificatie + braintree_masked_id
+    │     └── POST /postnl_fastcheckout/checkout/init  ← Fast Checkout → deeplink URL
     │
     ├── MCP: postnl-mcp
     │     ├── calculate_delivery_date
@@ -146,23 +153,35 @@ OpenClaw Gateway  (Google Cloud Run)
           └── Voice call (Gemini Live)
     │
     ▼
-E-commerce API  +  PostNL Checkout  →  bevestiging in PostNL-app
+magento-acc.pricetracking.net  →  /postnl_fastcheckout/checkout/init
+    │
+    ▼
+dil-fast-checkout-test.postnl.nl/deeplink/checkout/PNL-xxxxxxxx
+    │
+    ▼
+Bevestiging in PostNL-app
 ```
 
 ### De orderflow (doel)
 
 ```
 1. Intentie       "Ik wil een cadeau voor mijn moeder, budget €40"
-2. Discovery      Agent zoekt producten via commerce.py search
-3. Keuze          Agent stelt 2–3 opties voor, vraagt door
-4. Cart           Agent voegt gekozen product + variant toe
-5. Verzending     Agent vraagt bezorgadres, checkt levertijden (postnl-mcp)
-6. Checkout       Agent start PostNL Checkout-flow
-7. Akkoord        Gebruiker bevestigt (jouw user-in-the-loop)
-8. Bevestiging    Order + tracking via PostNL-app
+2. Session        Agent haalt PHPSESSID + form_key op van magento-acc.pricetracking.net
+3. Discovery      Agent zoekt SimpleProducts via GraphQL (/graphql)
+4. Keuze          Agent stelt 2–3 opties voor, vraagt door
+5. Cart           Agent voegt product toe via POST /checkout/cart/add/ (sessie-gebaseerd)
+                  Let op: minimale cartwaarde is €5,00
+6. Verzending     Agent vraagt bezorgadres, checkt levertijden (postnl-mcp)
+7. Checkout       Agent roept POST /postnl_fastcheckout/checkout/init aan
+                  → ontvangt orderId (PNL-xxxxxxxx) + checkoutUrl
+8. Akkoord        Agent geeft deeplink door aan gebruiker (user-in-the-loop)
+                  https://dil-fast-checkout-test.postnl.nl/deeplink/checkout/PNL-xxxxxxxx
+9. Bevestiging    Gebruiker rondt af in PostNL-app → order + tracking bevestigd
 ```
 
-**Belangrijk:** Agents kunnen geen betalingen uitvoeren namens de gebruiker. Na `create-order` krijg je een **payment/checkout URL** — de agent moet die overdragen aan de mens. Dat is geen bug; dat is het vertrouwensmodel.
+**Belangrijk:** Agents kunnen geen betalingen uitvoeren namens de gebruiker. Na `/postnl_fastcheckout/checkout/init` ontvang je een **deeplink checkout URL** — de agent moet die overdragen aan de mens. Dat is geen bug; dat is het vertrouwensmodel.
+
+**Let op (technisch):** Gebruik altijd de Magento frontend-cart (`POST /checkout/cart/add/`) en **niet** de GraphQL `addSimpleProductsToCart` mutation. PostNL Fast Checkout leest de PHP-sessiecart — een GraphQL-cart token werkt niet.
 
 ---
 
@@ -346,39 +365,54 @@ openclaw secrets audit --check
 
 ## Agent Commerce Engine
 
-De **Standard Agentic Commerce Engine** geeft je agent een consistente CLI voor elke compatible webshop. Geen custom API-calls per endpoint — één protocol, meerdere acties.
+De **Standard Agentic Commerce Engine** geeft je agent een consistente CLI voor de Magento acceptance store op `https://magento-acc.pricetracking.net`. De skill beschrijft de volledige flow — van sessie ophalen tot Fast Checkout deeplink.
 
-### Kerncommando's
+### Kerncommando's (directe Magento API)
 
 ```bash
-# Producten ontdekken
-python3 scripts/commerce.py --store $COMMERCE_STORE_URL search "kaars" --limit 5
-python3 scripts/commerce.py --store $COMMERCE_STORE_URL get <product-slug>
+# Stap 1: Haal PHPSESSID op
+curl -s -I 'https://magento-acc.pricetracking.net/' \
+  -H 'User-Agent: Mozilla/5.0' | grep -i 'set-cookie'
 
-# Winkelwagen
-python3 scripts/commerce.py --store $COMMERCE_STORE_URL add-cart <slug> --variant <variant-id>
-python3 scripts/commerce.py --store $COMMERCE_STORE_URL cart
+# Stap 2: Zoek producten via GraphQL (filter op SimpleProduct)
+curl -s -G 'https://magento-acc.pricetracking.net/graphql' \
+  --data-urlencode 'query={ products(search: "kaars") { items { __typename sku name price_range { minimum_price { regular_price { value currency } } } } } }' \
+  -H 'Content-Type: application/json'
 
-# Order (levert payment URL voor gebruiker)
-python3 scripts/commerce.py --store $COMMERCE_STORE_URL create-order \
-  --name "Jan de Vries" \
-  --phone "+31612345678" \
-  --province "Noord-Holland" \
-  --city "Amsterdam" \
-  --address "Keizersgracht 1"
+# Stap 3: Voeg product toe aan cart (sessie-gebaseerd, NIET GraphQL)
+curl -s -X POST 'https://magento-acc.pricetracking.net/checkout/cart/add/' \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -H 'X-Requested-With: XMLHttpRequest' \
+  -b "PHPSESSID=<SESSION_ID>; form_key=<FORM_KEY>" \
+  -d "product=<PRODUCT_ID>&qty=<QUANTITY>&form_key=<FORM_KEY>"
 
-# Promoties & merkcontext
-python3 scripts/commerce.py --store $COMMERCE_STORE_URL promotions
-python3 scripts/commerce.py --store $COMMERCE_STORE_URL brand-story
+# Stap 4: Init PostNL Fast Checkout → ontvangt deeplink URL
+curl -s -X POST 'https://magento-acc.pricetracking.net/postnl_fastcheckout/checkout/init' \
+  -H 'X-Requested-With: XMLHttpRequest' \
+  -H 'Content-Length: 0' \
+  -b "PHPSESSID=<SESSION_ID>; form_key=<FORM_KEY>"
+# Succes response: { "success": true, "data": { "orderId": "PNL-xxx", "checkoutUrl": "https://dil-fast-checkout-test.postnl.nl/deeplink/checkout/PNL-xxx" } }
 ```
+
+> **Minimale cartwaarde: €5,00.** Bereken de benodigde hoeveelheid op basis van de productprijs: `ceil(5.00 / prijs)`.
 
 ### Als OpenClaw skill
 
-De skill staat in `SKILL.md` op je gateway. OpenClaw leest die instructies en weet wanneer `commerce.py` aan te roepen. Jouw werk: het **system prompt** en de **flow-logica** verfijnen zodat de agent:
+De skill `postnl-fast-checkout` staat in `.cursor/skills/postnl-fast-checkout/SKILL.md` en beschrijft de volledige 8-staps flow. OpenClaw leest die instructies en weet wanneer welke API-call te doen. Jouw werk: het **system prompt** en de **flow-logica** verfijnen zodat de agent:
 
 - Niet te snel bestelt (eerst bevestigen!)
-- Varianten correct kiest uit de beschikbare opties
-- De payment URL duidelijk overdraagt aan de gebruiker
+- Alleen `SimpleProduct`-typen selecteert (geen configurabele producten)
+- De `PHPSESSID`-sessie consequent doorstuurt (alle stappen!)
+- De `checkoutUrl` deeplink duidelijk overdraagt aan de gebruiker
+
+### Veelvoorkomende fouten
+
+| Fout | Oorzaak | Oplossing |
+|------|---------|-----------|
+| `Minimum amount is 5` | Cartwaarde < €5 | Verhoog hoeveelheid |
+| Leeg `braintree_masked_id` | Cart nog niet aangemaakt | Voeg item toe, daarna re-fetch |
+| `404` op init | Sessie verlopen | Herstart vanaf stap 1 |
+| `EMPTY_CART` bij PostNL init | GraphQL-cart i.p.v. sessiecart gebruikt | Gebruik `POST /checkout/cart/add/` |
 
 ---
 
@@ -416,7 +450,10 @@ Test met Gemini Live: werkt de flow ook als mensen **spreken** in plaats van typ
 
 Integreer PostNL Checkout expliciet in de flow — niet alleen als betaallink, maar als onderdeel van de vertrouwensketen:
 
-- Agent legt uit wat PostNL Checkout doet
+- Agent roept `POST /postnl_fastcheckout/checkout/init` aan op `magento-acc.pricetracking.net`
+- Agent ontvangt `orderId` (bv. `PNL-a1b2c3d4`) en `checkoutUrl`
+- Agent legt uit wat PostNL Checkout doet en stuurt de deeplink door:  
+  `https://dil-fast-checkout-test.postnl.nl/deeplink/checkout/PNL-xxxxxxxx`
 - Gebruiker bevestigt in de PostNL-app
 - Agent bevestigt ordernummer + verwachte levertijd
 
@@ -447,11 +484,11 @@ Bouw expliciete fallback-paden — dat maakt indruk bij de jury.
 
 | Scenario | Wat je laat zien |
 |---|---|
-| **Snel cadeau** | Budget → zoeken → kiezen → checkout in < 2 minuten, geen UI |
+| **Snel cadeau** | Budget → zoeken → kiezen → deeplink checkout in < 2 minuten, geen UI |
 | **Voice-first** | Volledige flow via Gemini Live Talk |
 | **Bezorgkeuze** | Agent adviseert ServicePunt vs thuisbezorging via PostNL MCP |
-| **Vertrouwen** | Twee-staps bevestiging met duidelijke ordersamenvatting |
-| **PostNL Checkout** | Orderbevestiging verschijnt in PostNL-app op telefoon |
+| **Vertrouwen** | Twee-staps bevestiging met duidelijke ordersamenvatting vóór `/init` |
+| **PostNL Checkout** | Deeplink → `dil-fast-checkout-test.postnl.nl` → bevestiging in PostNL-app |
 
 ---
 
@@ -466,6 +503,14 @@ Bouw expliciete fallback-paden — dat maakt indruk bij de jury.
 - [Google Gemini API](https://aistudio.google.com) — API-sleutels
 - [Model Context Protocol](https://modelcontextprotocol.io)
 - [1Password — OpenClaw & API credentials](https://start.1password.com/open/i?a=6B6HH3NZIRBVXC3OSIWHH46Z5M&v=ayckfyn7626ma4tlschgvwmjvi&i=vdjuvmlhbaaxq5ukan4oz66amq&h=happyhorizonbv.1password.eu)
+
+### Commerce omgeving (acceptatie)
+
+- **Magento store:** `https://magento-acc.pricetracking.net`
+- **GraphQL endpoint:** `https://magento-acc.pricetracking.net/graphql`
+- **Cart endpoint:** `POST https://magento-acc.pricetracking.net/checkout/cart/add/`
+- **PostNL Fast Checkout init:** `POST https://magento-acc.pricetracking.net/postnl_fastcheckout/checkout/init`
+- **PostNL Fast Checkout deeplink:** `https://dil-fast-checkout-test.postnl.nl/deeplink/checkout/PNL-<orderId>`
 
 ---
 
