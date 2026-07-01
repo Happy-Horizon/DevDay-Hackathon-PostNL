@@ -58,9 +58,9 @@ Op hackathon-dag krijg je per team een **voorgeconfigureerde OpenClaw-omgeving o
 | OpenClaw gateway (Cloud Run) | ✅ Voorgeconfigureerd |
 | Gemini 2.5 Flash (tekst/reasoning) | ✅ Voorgeconfigureerd |
 | Gemini Live (realtime voice) | ✅ Voorgeconfigureerd |
-| E-commerce backend + testcatalogus | ✅ Beschikbaar |
-| PostNL Checkout module | ✅ Geïnstalleerd |
-| Agent Commerce Engine skill | ✅ Ingeladen |
+| Magento acceptance store (`magento-acc.pricetracking.net`) | ✅ Beschikbaar |
+| PostNL Fast Checkout module | ✅ Geïnstalleerd |
+| `postnl-fast-checkout` skill | ✅ Ingeladen |
 | Team-credentials & toegang | 📋 Van coördinator op de dag |
 
 Je hoeft **geen** cloud-infrastructuur op te zetten. Focus op de agent, de flow en de user-in-the-loop.
@@ -100,24 +100,16 @@ GOOGLE_API_KEY=<optioneel, van coördinator>
 ### Eerste stappen (09:30)
 
 ```bash
-# 1. Clone de starter (repo-URL van coördinator)
-git clone <commerce-starter-repo-url>
-cd postnl-agentic-commerce
-
-# 2. Controleer verbinding met je OpenClaw-instance
+# 1. Controleer verbinding met je OpenClaw-instance
 openclaw status --gateway $OPENCLAW_GATEWAY_URL
 
-# 3. Open de Control UI in je browser
+# 2. Open de Control UI in je browser
 open $OPENCLAW_GATEWAY_URL/ui
 
-# 4. Test de commerce store via GraphQL
+# 3. Test de Magento store via GraphQL
 curl -s -G 'https://magento-acc.pricetracking.net/graphql' \
   --data-urlencode 'query={ products(search: "yoga") { items { __typename sku name price_range { minimum_price { regular_price { value currency } } } } } }' \
   -H 'Content-Type: application/json'
-
-# 5. Test de commerce skill (als de agent-commerce-engine skill aanwezig is)
-python3 skills/agent-commerce-engine/scripts/commerce.py \
-  --store $COMMERCE_STORE_URL search "yoga" --limit 5
 ```
 
 **Verificatie:** Je ziet testproducten uit de Magento-catalogus op `magento-acc.pricetracking.net` en kunt inloggen op de OpenClaw Control UI. In Talk-modus reageert Gemini Live op je stem.
@@ -135,7 +127,7 @@ OpenClaw Gateway  (Google Cloud Run)
     ├── Model: google/gemini-2.5-flash        ← tekst, reasoning, tool calls
     ├── Voice:  Gemini Live API               ← realtime spraak (Talk-modus)
     │
-    ├── Skill: agent-commerce-engine  (magento-acc.pricetracking.net)
+    ├── Skill: postnl-fast-checkout  (magento-acc.pricetracking.net)
     │     ├── GraphQL /graphql               ← producten zoeken (SimpleProduct filter)
     │     ├── POST /checkout/cart/add/       ← session-based cart (PHPSESSID)
     │     ├── GET  /customer/section/load/   ← cart verificatie + braintree_masked_id
@@ -363,11 +355,11 @@ openclaw secrets audit --check
 
 ---
 
-## Agent Commerce Engine
+## PostNL Fast Checkout — technische flow
 
-De **Standard Agentic Commerce Engine** geeft je agent een consistente CLI voor de Magento acceptance store op `https://magento-acc.pricetracking.net`. De skill beschrijft de volledige flow — van sessie ophalen tot Fast Checkout deeplink.
+De **`postnl-fast-checkout` skill** beschrijft de volledige flow voor de Magento acceptance store op `https://magento-acc.pricetracking.net` — van sessie ophalen tot Fast Checkout deeplink. OpenClaw voert de stappen hieronder uit op basis van de skill-instructies.
 
-### Kerncommando's (directe Magento API)
+### Stappen (directe Magento API)
 
 ```bash
 # Stap 1: Haal PHPSESSID op
@@ -396,9 +388,9 @@ curl -s -X POST 'https://magento-acc.pricetracking.net/postnl_fastcheckout/check
 
 > **Minimale cartwaarde: €5,00.** Bereken de benodigde hoeveelheid op basis van de productprijs: `ceil(5.00 / prijs)`.
 
-### Als OpenClaw skill
+### De skill aanpassen
 
-De skill `postnl-fast-checkout` staat in `.cursor/skills/postnl-fast-checkout/SKILL.md` en beschrijft de volledige 8-staps flow. OpenClaw leest die instructies en weet wanneer welke API-call te doen. Jouw werk: het **system prompt** en de **flow-logica** verfijnen zodat de agent:
+De `postnl-fast-checkout` skill is voorgeconfigureerd op je OpenClaw-instance. Jouw werk: het **system prompt** en de **flow-logica** verfijnen zodat de agent:
 
 - Niet te snel bestelt (eerst bevestigen!)
 - Alleen `SimpleProduct`-typen selecteert (geen configurabele producten)
