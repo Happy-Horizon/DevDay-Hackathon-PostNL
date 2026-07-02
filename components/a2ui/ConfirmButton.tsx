@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Heading, Text } from "@design-system/react";
+import { Button, Heading, Text } from "@design-system/react";
 import { useAgentReply } from "@/lib/a2ui/use-agent-reply";
 
 export interface ConfirmButtonProps {
@@ -13,12 +13,6 @@ export interface ConfirmButtonProps {
   declineMessage?: string;
   showDecline?: boolean;
 }
-
-const actionButtonBase =
-  "inline-flex w-full items-center justify-center rounded-lg px-4 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#6161ff]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
-
-const confirmButtonClass = `${actionButtonBase} bg-[#6161ff] text-white hover:bg-[#5050e6] active:bg-[#4545d4]`;
-const declineButtonClass = `${actionButtonBase} border border-gray-300 bg-white text-gray-800 hover:border-gray-400 hover:bg-gray-50 active:bg-gray-100`;
 
 export function ConfirmButton({
   suggestion,
@@ -57,23 +51,27 @@ export function ConfirmButton({
       <Text size="s">{suggestion}</Text>
       <div className="flex flex-col sm:flex-row gap-3 w-full">
         {showDecline && (
-          <button
+          <Button
             type="button"
+            variant="secondary"
+            size="full"
             disabled={isDisabled}
             onClick={handleDecline}
-            className={`${declineButtonClass} sm:flex-1`}
+            className="sm:flex-1"
           >
             {declineText}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="button"
+          variant="primary"
+          size="full"
           disabled={isDisabled}
           onClick={handleConfirm}
-          className={`${confirmButtonClass}${showDecline ? " sm:flex-1" : ""}`}
+          className={showDecline ? "sm:flex-1" : undefined}
         >
           {confirmText}
-        </button>
+        </Button>
       </div>
     </div>
   );
