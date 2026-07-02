@@ -1,12 +1,17 @@
 "use client";
 
 import { KeyboardEvent, useEffect, useRef, useState } from "react";
-import { useAgent, useCopilotKit } from "@copilotkit/react-core/v2";
+import {
+  useAgent,
+  useCopilotKit,
+  useRenderActivityMessage,
+} from "@copilotkit/react-core/v2";
 
 interface Message {
   id: string;
   role: string;
   content: string | unknown;
+  activityType?: string;
 }
 
 function getTextContent(content: string | unknown): string {
@@ -38,15 +43,20 @@ function LoadingDots() {
 export function ChatInterface() {
   const { agent } = useAgent();
   const { copilotkit } = useCopilotKit();
+  const { renderActivityMessage } = useRenderActivityMessage();
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const messages = (agent.messages ?? []) as Message[];
   const isRunning = (agent as unknown as { isRunning?: boolean }).isRunning ?? false;
 
-  const visibleMessages = messages.filter(
-    (m) => (m.role === "user" || m.role === "assistant") && getTextContent(m.content).trim()
-  );
+  const visibleMessages = messages.filter((m) => {
+    if (m.role === "activity") return true;
+    return (
+      (m.role === "user" || m.role === "assistant") &&
+      getTextContent(m.content).trim()
+    );
+  });
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -76,26 +86,46 @@ export function ChatInterface() {
         <div className="flex flex-1 flex-col items-center min-h-0 w-full">
           {/* Messages scroll area */}
           <div className="flex flex-1 flex-col gap-6 items-start min-h-0 overflow-y-auto py-6 w-full">
-            {visibleMessages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex flex-col w-full ${msg.role === "user" ? "items-end" : "items-start"}`}
-              >
-                {msg.role === "user" ? (
-                  <div className="bg-[#f1f1f2] flex flex-col gap-3 items-start p-3 rounded-lg shrink-0 max-w-[640px]">
-                    <p className="text-base leading-6 text-[#1f1e2f] whitespace-pre-wrap">
-                      {getTextContent(msg.content)}
-                    </p>
+            {visibleMessages.map((msg) => {
+              if (msg.role === "activity") {
+                const activity = renderActivityMessage(
+                  msg as Parameters<typeof renderActivityMessage>[0],
+                );
+                if (!activity) return null;
+
+                return (
+                  <div
+                    key={msg.id}
+                    className="flex flex-col w-full items-start"
+                  >
+                    <div className="flex flex-col gap-3 items-start shrink-0 max-w-[640px] w-full">
+                      {activity}
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col gap-3 items-start shrink-0 max-w-[640px]">
-                    <p className="text-base leading-6 text-[#1f1e2f] whitespace-pre-wrap">
-                      {getTextContent(msg.content)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ))}
+                );
+              }
+
+              return (
+                <div
+                  key={msg.id}
+                  className={`flex flex-col w-full ${msg.role === "user" ? "items-end" : "items-start"}`}
+                >
+                  {msg.role === "user" ? (
+                    <div className="bg-[#f1f1f2] flex flex-col gap-3 items-start p-3 rounded-lg shrink-0 max-w-[640px]">
+                      <p className="text-base leading-6 text-[#1f1e2f] whitespace-pre-wrap">
+                        {getTextContent(msg.content)}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-3 items-start shrink-0 max-w-[640px]">
+                      <p className="text-base leading-6 text-[#1f1e2f] whitespace-pre-wrap">
+                        {getTextContent(msg.content)}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
             {isRunning && (
               <div className="flex w-full items-start">
