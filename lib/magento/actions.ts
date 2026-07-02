@@ -3,9 +3,13 @@ import {
   calculateMinQuantity,
   createMagentoSession,
   estimateDelivery,
+  getProductsAvailability,
   initPostnlCheckout,
   searchProducts,
+  setGuestShippingAddress,
 } from "./client";
+import { buildPostnlCheckoutUrl } from "@/lib/postnl/checkout-url";
+import type { GuestShippingAddressInput } from "./types";
 
 export const commerceActions = {
   async initMagentoSession() {
@@ -69,7 +73,21 @@ export const commerceActions = {
     };
   },
 
-  async initPostnlCheckout(userConfirmed: boolean) {
+  async setShippingAddress(address: GuestShippingAddressInput) {
+    await setGuestShippingAddress(address);
+    return {
+      success: true,
+      message: `Bezorgadres bijgewerkt: ${address.street}, ${address.postalCode} ${address.city}.`,
+    };
+  },
+
+  async initPostnlCheckout(
+    userConfirmed: boolean,
+    options?: {
+      shippingAddress?: GuestShippingAddressInput;
+      skipAddressConfirmation?: boolean;
+    }
+  ) {
     if (!userConfirmed) {
       return {
         success: false,
@@ -78,13 +96,39 @@ export const commerceActions = {
       };
     }
 
-    const checkout = await initPostnlCheckout();
+    const skipAddressConfirmation = options?.skipAddressConfirmation ?? false;
+    const checkout = await initPostnlCheckout({
+      shippingAddress: options?.shippingAddress,
+      skipAddressConfirmation,
+    });
+
+    const checkoutUrl = skipAddressConfirmation
+      ? buildPostnlCheckoutUrl(checkout.checkoutUrl, { skipToPayment: true })
+      : checkout.checkoutUrl;
+
     return {
       success: true,
       orderId: checkout.orderId,
-      checkoutUrl: checkout.checkoutUrl,
-      message:
-        "PostNL Fast Checkout gestart. De checkoutUrl is een deeplink naar de PostNL-app — daar vult de gebruiker adres (uit PostNL-account) en betaling in.",
+      checkoutUrl,
+      skipToPayment: skipAddressConfirmation,
+      message: skipAddressConfirmation
+        ? "PostNL Fast Checkout gestart. Deeplink opent direct bij betalen — bezorgadres staat al op de order."
+        : "PostNL Fast Checkout gestart. De checkoutUrl is een deeplink naar de PostNL-app — daar kiest de gebruiker adres en betaling.",
+    };
+  },
+
+  async checkProductsAvailability(skus: string[]) {
+    const items = await getProductsAvailability(skus);
+    return {
+      success: true,
+      items: items.map((item) => ({
+        sku: item.sku,
+        name: item.name,
+        price: item.price,
+        currency: item.currency,
+        available: item.available,
+        reason: item.reason ?? null,
+      })),
     };
   },
 };

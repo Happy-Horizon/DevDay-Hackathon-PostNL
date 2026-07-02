@@ -97,11 +97,30 @@ export async function setTelegramBotCommands(
 }
 
 export function checkoutKeyboard(
-  checkoutUrl: string
+  checkoutUrl: string,
+  options?: { skipToPayment?: boolean }
 ): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
-      [{ text: "Afronden in PostNL-app →", url: checkoutUrl }],
+      [
+        {
+          text: options?.skipToPayment
+            ? "Betalen in PostNL-app →"
+            : "Afronden in PostNL-app →",
+          url: checkoutUrl,
+        },
+      ],
+    ],
+  };
+}
+
+export function reorderConfirmKeyboard(): InlineKeyboardMarkup {
+  return {
+    inline_keyboard: [
+      [
+        { text: "Ja, opnieuw bestellen", callback_data: "confirm_reorder" },
+        { text: "Nee", callback_data: "cancel_order" },
+      ],
     ],
   };
 }

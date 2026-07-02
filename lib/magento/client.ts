@@ -12,6 +12,7 @@ import type {
   CartSummary,
   CheckoutResult,
   DeliveryEstimate,
+  GuestShippingAddressInput,
   MagentoSession,
   SimpleProduct,
 } from "./types";
@@ -322,28 +323,219 @@ export async function getCartSummary(session?: MagentoSession): Promise<CartSumm
   };
 }
 
-export async function initPostnlCheckout(): Promise<CheckoutResult> {
+export async function setGuestShippingAddress(
+  address: GuestShippingAddressInput,
+  session?: MagentoSession
+): Promise<void> {
+  const active = session ?? (await ensureSession());
+  const cart = await getCartSummary(active);
+
+  if (!cart.braintreeMaskedId) {
+    throw new Error(
+      "Geen winkelwagen gevonden — voeg eerst een product toe voordat je het adres instelt."
+    );
+  }
+
+  const payload = {
+    addressInformation: {
+      shipping_address: {
+        region: "",
+        region_id: 0,
+        country_id: "NL",
+        street: [address.street],
+        postcode: address.postalCode.replace(/\s/g, "").toUpperCase(),
+        city: address.city,
+        firstname: address.firstName ?? "PostNL",
+        lastname: address.lastName ?? "Klant",
+        email: address.email ?? "guest@postnl-checkout.local",
+        telephone: address.telephone ?? "0612345678",
+      },
+      billing_address: {
+        region: "",
+        region_id: 0,
+        country_id: "NL",
+        street: [address.street],
+        postcode: address.postalCode.replace(/\s/g, "").toUpperCase(),
+        city: address.city,
+        firstname: address.firstName ?? "PostNL",
+        lastname: address.lastName ?? "Klant",
+        email: address.email ?? "guest@postnl-checkout.local",
+        telephone: address.telephone ?? "0612345678",
+      },
+      shipping_method_code: "flatrate",
+      shipping_carrier_code: "flatrate",
+    },
+  };
+
+  const response = await fetch(
+    `${MAGENTO_STORE_URL}/rest/V1/guest-carts/${cart.braintreeMaskedId}/shipping-information`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "User-Agent": USER_AGENT,
+        Cookie: sessionCookie(active),
+      },
+      body: JSON.stringify(payload),
+    }
+  );
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(
+      `Bezorgadres instellen mislukt (${response.status}): ${text.slice(0, 200)}`
+    );
+  }
+}
+
+export interface ProductAvailability {
+  sku: string;
+  name: string;
+  price: number;
+  currency: string;
+  available: boolean;
+  isSimpleProduct: boolean;
+  reason?: string;
+}
+
+export async function getProductAvailability(
+  sku: string
+): Promise<ProductAvailability> {
+  const query = `{
+    products(filter: { sku: { eq: "${sku.replace(/"/g, '\\"')}" } }) {
+      items {
+        __typename
+        sku
+        name
+        stock_status
+        price_range {
+          minimum_price {
+            regular_price { value currency }
+          }
+        }
+      }
+    }
+  }`;
+
+  const response = await fetch(
+    `${MAGENTO_STORE_URL}/graphql?query=${encodeURIComponent(query)}`,
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "User-Agent": USER_AGENT,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`Productbeschikbaarheid ophalen mislukt (${response.status}).`);
+  }
+
+  const data = (await response.json()) as {
+    data?: {
+      products?: {
+        items?: Array<{
+          __typename?: string;
+          sku?: string;
+          name?: string;
+          stock_status?: string;
+          price_range?: {
+            minimum_price?: {
+              regular_price?: { value?: number; currency?: string };
+            };
+          };
+        }>;
+      };
+    };
+  };
+
+  const item = data.data?.products?.items?.[0];
+  if (!item?.sku || !item.name) {
+    return {
+      sku,
+      name: sku,
+      price: 0,
+      currency: "EUR",
+      available: false,
+      isSimpleProduct: false,
+      reason: "Product niet meer gevonden in de webshop.",
+    };
+  }
+
+  const isSimpleProduct = item.__typename === "SimpleProduct";
+  const inStock = item.stock_status === "IN_STOCK";
+  const available = isSimpleProduct && inStock;
+
+  return {
+    sku: item.sku,
+    name: item.name,
+    price: item.price_range?.minimum_price?.regular_price?.value ?? 0,
+    currency:
+      item.price_range?.minimum_price?.regular_price?.currency ?? "EUR",
+    available,
+    isSimpleProduct,
+    reason: available
+      ? undefined
+      : !isSimpleProduct
+        ? "Geen SimpleProduct — niet via Fast Checkout te bestellen."
+        : "Niet op voorraad.",
+  };
+}
+
+export async function getProductsAvailability(
+  skus: string[]
+): Promise<ProductAvailability[]> {
+  const unique = [...new Set(skus.filter(Boolean))];
+  return Promise.all(unique.map((sku) => getProductAvailability(sku)));
+}
+
+export async function initPostnlCheckout(
+  options?: {
+    shippingAddress?: GuestShippingAddressInput;
+    skipAddressConfirmation?: boolean;
+  }
+): Promise<CheckoutResult> {
+  const shippingAddress = options?.shippingAddress;
+  const skipAddressConfirmation = options?.skipAddressConfirmation ?? false;
   const session = await ensureSession();
   const cart = await getCartSummary(session);
+
+  if (shippingAddress) {
+    await setGuestShippingAddress(shippingAddress, session);
+  }
 
   if (cart.itemCount === 0) {
     clearActiveSession();
     throw new Error("EMPTY_CART: Winkelwagen is leeg. Voeg eerst een product toe.");
   }
 
+  const initHeaders: Record<string, string> = {
+    Accept: "*/*",
+    "X-Requested-With": "XMLHttpRequest",
+    Origin: MAGENTO_STORE_URL,
+    Referer: `${MAGENTO_STORE_URL}/`,
+    "User-Agent": USER_AGENT,
+    Cookie: sessionCookie(session),
+  };
+
+  let initBody: string | undefined;
+  if (skipAddressConfirmation && shippingAddress) {
+    initHeaders["Content-Type"] = "application/json";
+    initBody = JSON.stringify({
+      shippingAddressConfirmed: true,
+      skipAddressConfirmation: true,
+    });
+  } else {
+    initHeaders["Content-Length"] = "0";
+  }
+
   const response = await fetch(
     `${MAGENTO_STORE_URL}/postnl_fastcheckout/checkout/init`,
     {
       method: "POST",
-      headers: {
-        Accept: "*/*",
-        "X-Requested-With": "XMLHttpRequest",
-        "Content-Length": "0",
-        Origin: MAGENTO_STORE_URL,
-        Referer: `${MAGENTO_STORE_URL}/`,
-        "User-Agent": USER_AGENT,
-        Cookie: sessionCookie(session),
-      },
+      headers: initHeaders,
+      body: initBody,
     }
   );
 
@@ -383,6 +575,7 @@ export async function initPostnlCheckout(): Promise<CheckoutResult> {
     orderId,
     checkoutUrl,
     cartId: result.data?.cartId,
+    skipToPayment: skipAddressConfirmation,
   };
 }
 

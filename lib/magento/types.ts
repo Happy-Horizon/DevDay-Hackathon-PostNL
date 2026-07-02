@@ -22,10 +22,21 @@ export interface CheckoutResult {
   orderId: string;
   checkoutUrl: string;
   cartId?: string;
+  skipToPayment?: boolean;
 }
 
 export interface DeliveryEstimate {
   deliveryDate: string;
   deliveryWindow: string;
   serviceType: string;
+}
+
+export interface GuestShippingAddressInput {
+  street: string;
+  postalCode: string;
+  city: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  telephone?: string;
 }

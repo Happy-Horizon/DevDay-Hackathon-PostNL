@@ -1,5 +1,7 @@
 import type { ModelMessage } from "ai";
 import { clearActiveSession } from "@/lib/magento/session-store";
+import { finalizeLastOrder } from "./order-history";
+import { clearOrderState, getOrderState } from "./order-state";
 
 const MAX_MESSAGES = 24;
 
@@ -28,13 +30,26 @@ export function telegramSessionScope(chatId: number): string {
 export function resetTelegramChatSession(chatId: number): void {
   clearConversation(chatId);
   clearActiveSession(telegramSessionScope(chatId));
+  clearOrderState(chatId);
   completedOrders.delete(chatId);
 }
 
 /** Call after checkout link is sent — next user message starts a fresh order. */
-export function markOrderCompleted(chatId: number): void {
+export function markOrderCompleted(chatId: number, orderId?: string): void {
+  if (orderId) {
+    const state = getOrderState(chatId);
+    finalizeLastOrder(
+      chatId,
+      orderId,
+      state.cartItems,
+      state.shippingAddress,
+      state.cartTotal
+    );
+  }
+
   clearConversation(chatId);
   clearActiveSession(telegramSessionScope(chatId));
+  clearOrderState(chatId);
   completedOrders.add(chatId);
 }
 
@@ -43,6 +58,7 @@ export function beginNewOrderIfNeeded(chatId: number): boolean {
   completedOrders.delete(chatId);
   clearConversation(chatId);
   clearActiveSession(telegramSessionScope(chatId));
+  clearOrderState(chatId);
   return true;
 }
 
