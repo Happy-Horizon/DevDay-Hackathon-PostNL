@@ -92,7 +92,7 @@ export default function Home() {
       <main className="flex-1 flex flex-col items-center px-4 py-12">
         <div className="w-full max-w-2xl">
           <Heading level={1} size="xl" className="mb-8">
-            {getGreeting()}, wat wil je versturen?
+            {getGreeting()}, wat wil je bestellen?
           </Heading>
 
           <ChatComposer

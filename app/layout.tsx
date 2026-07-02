@@ -3,9 +3,9 @@ import { Providers } from "./providers";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PostNL — Hackathon Starter",
+  title: "PostNL — Agentic Commerce",
   description:
-    "Agent-to-UI × PostNL. Conversational interface powered by Gemini and the Stamp design system.",
+    "Agentic Commerce × PostNL. Bestel via conversatie met PostNL Fast Checkout — zonder webshop-UI.",
 };
 
 export default function RootLayout({

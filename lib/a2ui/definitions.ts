@@ -2,19 +2,52 @@ import { z } from "zod";
 import type { CatalogDefinitions } from "@copilotkit/a2ui-renderer";
 
 export const stampDefinitions = {
-  TrackingCard: {
+  ProductCard: {
     description:
-      "Shows a PostNL parcel tracking status: barcode, current status label, and optional estimated delivery date. Use this when the user asks about their package.",
+      "A product option card for the Magento catalog. Use when presenting 1–3 SimpleProduct options after a search. " +
+      "Show name, SKU, price, and optional index number. Do NOT use for order confirmation or checkout.",
     props: z.object({
-      barcode: z.string(),
-      status: z.string(),
-      estimatedDelivery: z.string().optional(),
+      index: z.number().optional().describe("Option number (1, 2, 3)"),
+      name: z.string().describe("Product name"),
+      sku: z.string().describe("Product SKU"),
+      price: z.string().describe("Formatted price, e.g. '€12,95'"),
+      note: z.string().optional().describe("Short note, e.g. min. quantity for €5 cart"),
+    }),
+  },
+
+  OrderSummary: {
+    description:
+      "Order summary shown BEFORE checkout, for user confirmation. " +
+      "Use when the user has chosen a product and provided delivery details. " +
+      "Requires explicit user approval before calling init_postnl_checkout.",
+    props: z.object({
+      productName: z.string(),
+      sku: z.string(),
+      quantity: z.number(),
+      subtotal: z.string().describe("Formatted subtotal, e.g. '€24,90'"),
+      deliveryAddress: z.string(),
+      deliveryDate: z.string().optional(),
+      deliveryService: z.string().optional(),
+    }),
+  },
+
+  CheckoutHandoff: {
+    description:
+      "PostNL Fast Checkout handoff card shown AFTER init_postnl_checkout succeeds. " +
+      "Contains orderId and checkoutUrl deeplink. User completes payment in PostNL app.",
+    props: z.object({
+      orderId: z.string().describe("PNL-xxxxxxxx order reference"),
+      checkoutUrl: z.string().describe("Deeplink URL for PostNL app checkout"),
+      message: z
+        .string()
+        .optional()
+        .describe("Short Dutch instruction for the user"),
     }),
   },
 
   PriceRow: {
     description:
-      "One line in a shipping price breakdown: a label and a formatted euro amount. Use multiple PriceRows inside a Column to build a price table. Mark the total row with isTotal.",
+      "One line in a price breakdown: label and formatted euro amount. Use multiple PriceRows for order totals.",
     props: z.object({
       label: z.string(),
       amount: z.string(),
@@ -24,7 +57,7 @@ export const stampDefinitions = {
 
   ServiceCard: {
     description:
-      "A PostNL shipping service option with name, short description, price, and optional badge (e.g. 'Aangeraden', 'Snel'). Use when presenting shipping options to choose from.",
+      "A delivery or shipping service option. Use when presenting PostNL delivery choices (e.g. Standaard vs Vandaag).",
     props: z.object({
       name: z.string(),
       description: z.string(),
