@@ -40,7 +40,9 @@ export const stampDefinitions = {
       "Provide a clear title, optional helper text, and 2–6 options with a replyMessage per option so the user's choice is sent back to the agent. " +
       "Do NOT use for yes/no confirmation (use ConfirmButton), tracking, or read-only info.",
     props: z.object({
-      title: z.string().describe("Card heading, e.g. 'Pakketgewicht' or 'Bezorgoptie'"),
+      title: z
+        .string()
+        .describe("Card heading, e.g. 'Pakketgewicht' or 'Bezorgoptie'"),
       description: z
         .string()
         .optional()
@@ -76,6 +78,43 @@ export const stampDefinitions = {
     }),
   },
 
+  CaseIdentifyer: {
+    description:
+      "Interactive option selector for the agent to figure out wether the user needs help to figure out the weight classification and type of box for their package, or if they already have one / have their package packed.",
+    props: z.object({
+      question: z
+        .string()
+        .describe(
+          "The agent questions wether the user already has their package packed or already has a box, or if the user needs help figuring out the type of box and weight class",
+        ),
+      title: z
+        .string()
+        .optional()
+        .describe("Card heading, default 'Klopt dit?'"),
+      packedLabel: z
+        .string()
+        .optional()
+        .describe(
+          "already packed button label, default 'Ik heb al een pakket/doos'",
+        ),
+      packedMessage: z
+        .string()
+        .optional()
+        .describe(
+          "User message sent when already packed; defaults to 'Ik heb al een pakket/doos' if omitted",
+        ),
+      needHelpLabel: z
+        .string()
+        .optional()
+        .describe("need help button label, default 'Pakket hulp'"),
+      needHelpMessage: z
+        .string()
+        .optional()
+        .describe(
+          "User message sent on need help; defaults to 'Ik heb hulp nodig met het samenstellen van de informatie voor mijn pakket.",
+        ),
+    }),
+  },
   ConfirmButton: {
     description:
       "Interactive yes/no confirmation for the user to approve or reject an agent suggestion " +
