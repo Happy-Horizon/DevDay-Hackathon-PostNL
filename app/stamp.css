@@ -1,0 +1,22 @@
+/**
+ * Scoped Stamp styles — avoids @design-system/css index reset (* { margin: 0; padding: 0 })
+ * which breaks Tailwind layout across the app.
+ *
+ * Add component CSS here when introducing new @design-system/react components.
+ */
+
+@import "@design-system/css/base/fonts.css";
+@import "@design-system/css/components/stamp-provider/stamp-provider.css";
+
+@import "@design-system/css/components/button/button.css";
+@import "@design-system/css/components/card/card.css";
+@import "@design-system/css/components/fieldset/fieldset.css";
+@import "@design-system/css/components/flex/flex.css";
+@import "@design-system/css/components/form/form.css";
+@import "@design-system/css/components/form-field/form-field.css";
+@import "@design-system/css/components/form-field-label/form-field-label.css";
+@import "@design-system/css/components/heading/heading.css";
+@import "@design-system/css/components/label/label.css";
+@import "@design-system/css/components/select-input/select-input.css";
+@import "@design-system/css/components/text/text.css";
+@import "@design-system/css/components/text-input/text-input.css";

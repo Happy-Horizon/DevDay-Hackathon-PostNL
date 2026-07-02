@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Stamp design system CSS is auto-imported via @design-system/react */
+/* Stamp component styles: app/stamp.css (scoped imports, no global reset) */
 
 html,
 body {

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Providers } from "./providers";
 import "./globals.css";
+import "./stamp.css";
 
 export const metadata: Metadata = {
   title: "PostNL — Hackathon Starter",

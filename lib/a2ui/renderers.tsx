@@ -1,5 +1,7 @@
 import { Heading, Text, LabelBasic, LabelEmphasis } from "@design-system/react";
 import type { CatalogRenderers, PropsOf } from "@copilotkit/a2ui-renderer";
+import { PackageStickerView } from "./components/PackageStickerView";
+import { ShippingAddressFormView } from "./components/ShippingAddressFormView";
 import type { StampDefinitions } from "./definitions";
 
 export const stampRenderers: CatalogRenderers<StampDefinitions> = {
@@ -55,5 +57,15 @@ export const stampRenderers: CatalogRenderers<StampDefinitions> = {
         <strong>{props.price}</strong>
       </Text>
     </div>
+  ),
+
+  ShippingAddressForm: ({
+    props,
+  }: {
+    props: PropsOf<StampDefinitions, "ShippingAddressForm">;
+  }) => <ShippingAddressFormView country={props.country} />,
+
+  PackageSticker: ({ props }: { props: PropsOf<StampDefinitions, "PackageSticker"> }) => (
+    <PackageStickerView {...props} />
   ),
 };
