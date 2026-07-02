@@ -1,11 +1,17 @@
 import { Heading, Text, LabelBasic, LabelEmphasis } from "@design-system/react";
 import type { CatalogRenderers, PropsOf } from "@copilotkit/a2ui-renderer";
+
+import { CaseIdentifyer } from "@/components/a2ui/CaseIdentifyer";
 import { ConfirmButton } from "@/components/a2ui/ConfirmButton";
 import { RadioButtonGroup } from "@/components/a2ui/RadioButtonGroup";
 import type { StampDefinitions } from "./definitions";
 
 export const stampRenderers: CatalogRenderers<StampDefinitions> = {
-  TrackingCard: ({ props }: { props: PropsOf<StampDefinitions, "TrackingCard"> }) => (
+  TrackingCard: ({
+    props,
+  }: {
+    props: PropsOf<StampDefinitions, "TrackingCard">;
+  }) => (
     <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col gap-2 shadow-sm w-full">
       <div className="flex items-center justify-between gap-2">
         <Heading level={3} size="s">
@@ -42,7 +48,11 @@ export const stampRenderers: CatalogRenderers<StampDefinitions> = {
     </div>
   ),
 
-  ServiceCard: ({ props }: { props: PropsOf<StampDefinitions, "ServiceCard"> }) => (
+  ServiceCard: ({
+    props,
+  }: {
+    props: PropsOf<StampDefinitions, "ServiceCard">;
+  }) => (
     <div className="rounded-xl border border-gray-200 bg-white p-4 flex flex-col gap-2 shadow-sm w-full">
       <div className="flex items-start justify-between gap-2">
         <Heading level={3} size="s">
@@ -72,7 +82,11 @@ export const stampRenderers: CatalogRenderers<StampDefinitions> = {
     />
   ),
 
-  ConfirmButton: ({ props }: { props: PropsOf<StampDefinitions, "ConfirmButton"> }) => (
+  ConfirmButton: ({
+    props,
+  }: {
+    props: PropsOf<StampDefinitions, "ConfirmButton">;
+  }) => (
     <ConfirmButton
       suggestion={props.suggestion}
       title={props.title}
@@ -81,6 +95,21 @@ export const stampRenderers: CatalogRenderers<StampDefinitions> = {
       declineLabel={props.declineLabel}
       declineMessage={props.declineMessage}
       showDecline={props.showDecline}
+    />
+  ),
+
+  CaseIdentifyer: ({
+    props,
+  }: {
+    props: PropsOf<StampDefinitions, "CaseIdentifyer">;
+  }) => (
+    <CaseIdentifyer
+      question={props.question}
+      title={props.title}
+      packedLabel={props.packedLabel}
+      packedMessage={props.packedMessage}
+      needHelpLabel={props.needHelpLabel}
+      needHelpMessage={props.needHelpMessage}
     />
   ),
 };
