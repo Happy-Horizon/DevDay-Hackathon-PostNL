@@ -1,5 +1,7 @@
 import { Heading, Text, LabelBasic, LabelEmphasis } from "@design-system/react";
 import type { CatalogRenderers, PropsOf } from "@copilotkit/a2ui-renderer";
+import { ConfirmButton } from "@/components/a2ui/ConfirmButton";
+import { RadioButtonGroup } from "@/components/a2ui/RadioButtonGroup";
 import type { StampDefinitions } from "./definitions";
 
 export const stampRenderers: CatalogRenderers<StampDefinitions> = {
@@ -55,5 +57,30 @@ export const stampRenderers: CatalogRenderers<StampDefinitions> = {
         <strong>{props.price}</strong>
       </Text>
     </div>
+  ),
+
+  RadioButtonGroup: ({
+    props,
+  }: {
+    props: PropsOf<StampDefinitions, "RadioButtonGroup">;
+  }) => (
+    <RadioButtonGroup
+      title={props.title}
+      description={props.description}
+      options={props.options}
+      selectedValue={props.selectedValue}
+    />
+  ),
+
+  ConfirmButton: ({ props }: { props: PropsOf<StampDefinitions, "ConfirmButton"> }) => (
+    <ConfirmButton
+      suggestion={props.suggestion}
+      title={props.title}
+      confirmLabel={props.confirmLabel}
+      confirmMessage={props.confirmMessage}
+      declineLabel={props.declineLabel}
+      declineMessage={props.declineMessage}
+      showDecline={props.showDecline}
+    />
   ),
 };
