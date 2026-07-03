@@ -16,6 +16,7 @@ import {
   Text,
   TextInput,
 } from "@design-system/react";
+import { useAgentReply } from "@/lib/a2ui/use-agent-reply";
 import { PackageStickerView } from "./PackageStickerView";
 
 const COUNTRIES = [
@@ -38,7 +39,12 @@ type ShippingAddressFormViewProps = {
   country?: string;
 };
 
+function formatAddressReply(data: FormState): string {
+  return `Mijn verzendadres is: ${data.name}, ${data.address}, ${data.postcode}, ${data.country}.`;
+}
+
 export function ShippingAddressFormView({ country: knownCountry }: ShippingAddressFormViewProps) {
+  const { sendReply, isDisabled } = useAgentReply();
   const [formData, setFormData] = useState<FormState>({
     name: "",
     address: "",
@@ -55,18 +61,23 @@ export function ShippingAddressFormView({ country: knownCountry }: ShippingAddre
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (isDisabled) return;
 
     const country = knownCountry ?? formData.country;
     if (!formData.name.trim() || !formData.address.trim() || !formData.postcode.trim() || !country.trim()) {
       return;
     }
 
-    setSticker({
+    const submittedAddress: FormState = {
       name: formData.name.trim(),
       address: formData.address.trim(),
       country: country.trim(),
       postcode: formData.postcode.trim(),
-    });
+    };
+
+    if (!sendReply(formatAddressReply(submittedAddress))) return;
+
+    setSticker(submittedAddress);
   }
 
   if (sticker) {
@@ -111,6 +122,7 @@ export function ShippingAddressFormView({ country: knownCountry }: ShippingAddre
                 value={formData.name}
                 onChange={(event) => updateField("name", event.target.value)}
                 placeholder="Naam ontvanger"
+                disabled={isDisabled}
                 required
               />
             </FormField>
@@ -124,6 +136,7 @@ export function ShippingAddressFormView({ country: knownCountry }: ShippingAddre
                 value={formData.address}
                 onChange={(event) => updateField("address", event.target.value)}
                 placeholder="Straat en huisnummer"
+                disabled={isDisabled}
                 required
               />
             </FormField>
@@ -138,6 +151,7 @@ export function ShippingAddressFormView({ country: knownCountry }: ShippingAddre
                   value={formData.country}
                   onChange={(event) => updateField("country", event.target.value)}
                   placeholder="Selecteer een land"
+                  disabled={isDisabled}
                   required
                 >
                   <option value="" disabled>
@@ -168,11 +182,12 @@ export function ShippingAddressFormView({ country: knownCountry }: ShippingAddre
                 value={formData.postcode}
                 onChange={(event) => updateField("postcode", event.target.value)}
                 placeholder="1234 AB"
+                disabled={isDisabled}
                 required
               />
             </FormField>
 
-            <Button type="submit" variant="primary">
+            <Button type="submit" variant="primary" disabled={isDisabled}>
               Verzendlabel maken
             </Button>
           </Fieldset>
