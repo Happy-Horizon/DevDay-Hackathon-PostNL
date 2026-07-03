@@ -1,0 +1,10 @@
+{
+  "known": true,
+  "name": "Jan de Vries",
+  "phone": "+31612345678",
+  "city": "Amsterdam",
+  "address": "Keizersgracht 1",
+  "province": "Noord-Holland",
+  "default_delivery": "home",
+  "note": "Dit is het opgeslagen profiel. Omdat de agent dit kent, hoeft hij adres niet te vragen. Draai met --unknown-address om het vraag-pad te zien."
+}

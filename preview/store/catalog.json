@@ -1,0 +1,61 @@
+{
+  "store": {
+    "name": "PostNL DevDay Test Store",
+    "currency": "EUR",
+    "brand_story": "Cadeaus die met zorg bezorgd worden. Elk product komt met PostNL-tracking en kan naar huis of naar een ServicePunt."
+  },
+  "promotions": [
+    { "code": "MOEDERDAG", "description": "5% korting op bloemen & thee", "applies_to_tag": "moederdag" },
+    { "code": "GRATISVERZEND", "description": "Gratis verzending vanaf €35", "min_total": 3500 }
+  ],
+  "products": [
+    {
+      "slug": "geurkaars-duinroos",
+      "title": "Geurkaars Duinroos",
+      "description": "Handgegoten sojakaars, brandt ~40 uur. Geur van duinroos en zeewind.",
+      "tags": ["cadeau", "moederdag", "wonen"],
+      "variants": [
+        { "id": "kaars-klein", "label": "Klein (120g)", "price": 1495, "stock": 12 },
+        { "id": "kaars-groot", "label": "Groot (250g)", "price": 2495, "stock": 4 }
+      ]
+    },
+    {
+      "slug": "thee-cadeaubox",
+      "title": "Thee Cadeaubox 'Rust'",
+      "description": "Zes losse thees in een herbruikbaar blik. Cafeïnevrij, biologisch.",
+      "tags": ["cadeau", "moederdag", "eten-drinken"],
+      "variants": [
+        { "id": "thee-standaard", "label": "Standaard box", "price": 2295, "stock": 20 },
+        { "id": "thee-deluxe", "label": "Deluxe + theepot", "price": 3895, "stock": 0 }
+      ]
+    },
+    {
+      "slug": "zijden-sjaal",
+      "title": "Zijden Sjaal Botanisch",
+      "description": "100% zijde, met de hand bedrukt botanisch patroon. In geschenkverpakking.",
+      "tags": ["cadeau", "moederdag", "mode"],
+      "variants": [
+        { "id": "sjaal-blauw", "label": "Indigo blauw", "price": 3900, "stock": 7 },
+        { "id": "sjaal-groen", "label": "Salie groen", "price": 3900, "stock": 3 }
+      ]
+    },
+    {
+      "slug": "planten-abonnement",
+      "title": "Kamerplant Verrassingsbox",
+      "description": "Eén verzorgde kamerplant per maand. Dit is de eenmalige startbox.",
+      "tags": ["cadeau", "wonen", "planten"],
+      "variants": [
+        { "id": "plant-start", "label": "Startbox", "price": 2750, "stock": 15 }
+      ]
+    },
+    {
+      "slug": "chocolade-proeverij",
+      "title": "Bean-to-bar Chocolade Proeverij",
+      "description": "Acht repen van Nederlandse makelij, van 55% tot 85% cacao.",
+      "tags": ["cadeau", "eten-drinken"],
+      "variants": [
+        { "id": "choco-8", "label": "8 repen", "price": 2999, "stock": 9 }
+      ]
+    }
+  ]
+}

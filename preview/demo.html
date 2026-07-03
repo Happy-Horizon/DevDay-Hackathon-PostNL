@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PostNL × Agentic Commerce — van 8 stappen naar 1 tik</title>
+<style>
+  :root{
+    --pnl:#FF6200; --pnl-dark:#CC4E00; --ink:#1c1c1e; --muted:#6b7280;
+    --bg:#f4f5f7; --card:#ffffff; --line:#e5e7eb; --green:#12a150; --red:#e5484d;
+    --agent:#0b5fff; --watch:#0d0f12;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg);color:var(--ink);line-height:1.5}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:8px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .logo{background:var(--pnl);color:#fff;font-weight:800;letter-spacing:.5px;padding:8px 12px;border-radius:8px;font-size:18px}
+  h1{font-size:20px;margin:0}
+  .sub{color:var(--muted);font-size:13px;margin-top:2px}
+  .counter{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 16px;text-align:center;min-width:180px}
+  .counter b{font-size:30px;color:var(--pnl);display:block;line-height:1}
+  .counter span{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+  button{font:inherit;border:1px solid var(--line);background:#fff;padding:9px 16px;border-radius:9px;cursor:pointer;font-weight:600;transition:.15s}
+  button:hover{border-color:var(--pnl)}
+  button.primary{background:var(--pnl);color:#fff;border-color:var(--pnl)}
+  button.primary:hover{background:var(--pnl-dark)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden;background:#fff}
+  .seg button{border:none;border-radius:0;border-right:1px solid var(--line);font-weight:500;font-size:13px}
+  .seg button:last-child{border-right:none}
+  .seg button.on{background:#fff3e9;color:var(--pnl-dark)}
+
+  .steps{display:flex;gap:6px;margin:8px 0 20px;flex-wrap:wrap}
+  .step{flex:1;min-width:96px;border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 10px;font-size:12px;color:var(--muted);position:relative;transition:.2s}
+  .step .n{font-weight:800;color:#c3c7ce;font-size:11px}
+  .step.active{border-color:var(--pnl);box-shadow:0 0 0 3px #ff620022}
+  .step.active .n{color:var(--pnl)}
+  .step.done{background:#f0fbf4;border-color:#bfead0}
+  .step.done .n{color:var(--green)}
+  .step.human{background:#fff3e9;border-color:var(--pnl)}
+
+  .stage{display:grid;grid-template-columns:1fr 340px;gap:20px}
+  @media(max-width:840px){.stage{grid-template-columns:1fr}}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;min-height:440px}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:0 0 12px}
+
+  .chat{display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto}
+  .msg{max-width:88%;padding:9px 13px;border-radius:14px;font-size:14px;animation:pop .25s ease}
+  .msg .who{font-size:11px;font-weight:700;opacity:.7;margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px}
+  .msg.agent{align-self:flex-start;background:#eef3ff;color:#0b2a6b}
+  .msg.user{align-self:flex-end;background:#eaf7ee;color:#0c5a2c}
+  .msg.sys{align-self:center;background:#f3f4f6;color:var(--muted);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+  .msg.pnl{align-self:flex-start;background:#fff1e6;color:var(--pnl-dark);border:1px solid #ffd9bd}
+  @keyframes pop{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+  /* Watch */
+  .watchwrap{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px}
+  .band{width:150px;height:22px;background:linear-gradient(#2a2d33,#15171b);border-radius:8px}
+  .band.bottom{margin-top:-2px}
+  .watch{width:230px;height:250px;background:var(--watch);border-radius:48px;padding:20px;color:#fff;
+    box-shadow:0 12px 40px rgba(0,0,0,.35),inset 0 0 0 2px #2c2f36;position:relative;transition:.15s}
+  .watch.buzz{animation:buzz .5s linear infinite}
+  @keyframes buzz{0%,100%{transform:translate(0,0)}25%{transform:translate(-3px,2px)}50%{transform:translate(3px,-2px)}75%{transform:translate(-2px,-2px)}}
+  .wtop{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#9aa0aa;letter-spacing:1px;font-weight:700}
+  .hr{color:var(--red);font-weight:700}
+  .wbody{margin-top:14px;text-align:center;display:flex;flex-direction:column;gap:6px;min-height:120px;justify-content:center}
+  .wtitle{font-size:12px;color:#cfd3da}
+  .wproduct{font-size:14px;font-weight:600}
+  .wtotal{font-size:26px;font-weight:800;color:#fff}
+  .whint{font-size:11px;color:#8b919b}
+  .wactions{display:flex;gap:8px;margin-top:6px;justify-content:center}
+  .wbtn{border:none;border-radius:999px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer}
+  .wbtn.pay{background:var(--pnl);color:#fff}
+  .wbtn.pay:hover{background:var(--pnl-dark)}
+  .wbtn.no{background:#2c2f36;color:#cfd3da}
+  .watch.idle .wbody{opacity:.5}
+  .badge{display:inline-block;background:#12a150;color:#fff;border-radius:999px;width:44px;height:44px;line-height:44px;font-size:22px;margin:0 auto}
+
+  .foot{color:var(--muted);font-size:12px;margin-top:18px;text-align:center}
+  .pill{display:inline-block;background:#fff;border:1px solid var(--line);border-radius:999px;padding:2px 10px;font-size:11px;color:var(--muted);margin-left:6px}
+
+  /* Devices + phone */
+  .devices{display:flex;flex-direction:column;align-items:center;gap:12px}
+  .devlabel{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+  .phonewrap{display:none;flex-direction:column;align-items:center;gap:8px;animation:pop .3s ease}
+  .phone{width:212px;height:412px;background:#0d0f12;border-radius:32px;padding:11px;position:relative;
+    box-shadow:0 14px 44px rgba(0,0,0,.38),inset 0 0 0 2px #2c2f36}
+  .notch{width:78px;height:17px;background:#0d0f12;border-radius:0 0 13px 13px;position:absolute;left:50%;transform:translateX(-50%);top:0;z-index:2}
+  .pscreen{background:#fff;border-radius:22px;height:100%;overflow:hidden;display:flex;flex-direction:column}
+  .phead{background:var(--pnl);color:#fff;font-weight:800;font-size:13px;padding:11px;text-align:center;letter-spacing:.5px}
+  .pbody{padding:11px;display:flex;flex-direction:column;gap:7px;font-size:11.5px;color:var(--ink);flex:1;overflow:auto}
+  .prow{border:1px solid var(--line);border-radius:9px;padding:7px 9px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;gap:6px;transition:.12s}
+  .prow:hover{border-color:var(--pnl)}
+  .prow.sel{border-color:var(--pnl);background:#fff3e9}
+  .prow .rk{font-size:10.5px;color:var(--muted);white-space:nowrap}
+  .psec{font-size:9.5px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin-top:3px}
+  .pbtn{margin-top:auto;background:var(--pnl);color:#fff;border:none;border-radius:10px;padding:11px;font-weight:800;font-size:14px;cursor:pointer}
+  .pbtn:hover{background:var(--pnl-dark)}
+  .pcenter{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;text-align:center;padding:16px}
+  .pbadge{background:var(--green);color:#fff;border-radius:999px;width:56px;height:56px;line-height:56px;font-size:28px}
+  .switchhint{font-size:12px;color:var(--pnl-dark);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">
+      <div class="logo">PostNL</div>
+      <div>
+        <h1>Agentic Commerce — van 8 stappen naar <span style="color:var(--pnl)">1 menselijke tik</span></h1>
+        <div class="sub">Agent autonoom tot de checkout · krijgt alléén een PostNL Fast Checkout deeplink · bevestiging in de PostNL-app</div>
+      </div>
+    </div>
+    <div class="counter"><b id="humanCount">0</b><span>menselijk moment (de checkout)</span></div>
+  </header>
+
+  <div class="controls">
+    <button class="primary" id="run">▶ Start demo</button>
+    <button id="reset">↺ Reset</button>
+    <span class="seg" id="scen">
+      <button data-s="happy" class="on">Happy</button>
+      <button data-s="pending">Bevestiging traag (async)</button>
+      <button data-s="decline">Weigeren</button>
+      <button data-s="oos">Niet op voorraad</button>
+    </span>
+    <span class="pill" id="scenNote">deeplink → PostNL-app · adres + betaling daar · jij bevestigt 1×</span>
+  </div>
+
+  <div class="steps" id="steps"></div>
+
+  <div class="stage">
+    <div class="panel">
+      <h2>Gesprek · agent ↔ commerce.py (geen webshop-UI)</h2>
+      <div class="chat" id="chat"></div>
+    </div>
+    <div class="panel">
+      <h2>Devices · Garmin → GSM (PostNL-app)</h2>
+      <div class="devices">
+        <div class="watchwrap" id="watchwrap">
+          <div class="band"></div>
+          <div class="watch idle" id="watch">
+            <div class="wtop"><span>GARMIN</span><span class="hr" id="hr">♥ 72</span></div>
+            <div class="wbody" id="wbody">
+              <div class="wtitle">wacht op de agent…</div>
+            </div>
+          </div>
+          <div class="band bottom"></div>
+          <div class="devlabel" id="devlabel">Garmin — nudge</div>
+        </div>
+        <div class="phonewrap" id="phonewrap">
+          <div class="phone">
+            <div class="notch"></div>
+            <div class="pscreen" id="pscreen"></div>
+          </div>
+          <div class="devlabel">PostNL-app — checkout</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">
+    Offline preview · alle data is mock · de agent praat alleen met <code>commerce.py</code> ·
+    swap de watch voor WhatsApp / voice / PostNL-app zonder de flow te wijzigen.
+  </div>
+</div>
+
+<script>
+const STEP_LABELS = ["Intentie","Discovery","Voorstel","Cart","Bezorging","Checkout init","HÉT moment","Bevestiging"];
+const chat = document.getElementById('chat');
+const stepsEl = document.getElementById('steps');
+const watch = document.getElementById('watch');
+const wbody = document.getElementById('wbody');
+const hr = document.getElementById('hr');
+const humanCount = document.getElementById('humanCount');
+const runBtn = document.getElementById('run');
+const resetBtn = document.getElementById('reset');
+const scenNote = document.getElementById('scenNote');
+const watchwrap = document.getElementById('watchwrap');
+const phonewrap = document.getElementById('phonewrap');
+const pscreen = document.getElementById('pscreen');
+let scenario = 'happy';
+let humans = 0;
+let running = false;
+
+const NOTES = {
+  happy:"deeplink → PostNL-app · adres + betaling daar · jij bevestigt 1×",
+  pending:"agent krijgt alleen een link → bevestiging komt async; agent polt i.p.v. te gokken",
+  decline:"jij sluit de checkout → geen order, niks belast",
+  oos:"gekozen variant niet op voorraad → guardrail springt aan"
+};
+
+document.querySelectorAll('#scen button').forEach(b=>{
+  b.onclick=()=>{ if(running) return;
+    document.querySelectorAll('#scen button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on'); scenario=b.dataset.s; scenNote.textContent=NOTES[scenario]; reset();
+  };
+});
+
+function buildSteps(){
+  stepsEl.innerHTML='';
+  STEP_LABELS.forEach((l,i)=>{
+    const d=document.createElement('div'); d.className='step'; d.id='st'+i;
+    d.innerHTML=`<div class="n">${i+1}</div>${l}`;
+    if(i===6) d.classList.add('human');
+    stepsEl.appendChild(d);
+  });
+}
+function setStep(i,state){ const el=document.getElementById('st'+i); if(!el)return;
+  el.classList.remove('active'); if(state==='active')el.classList.add('active'); if(state==='done')el.classList.add('done'); }
+
+function say(who,text){
+  const names={agent:'🤖 agent',user:'🧑 klant',sys:'commerce.py',pnl:'📦 PostNL'};
+  const m=document.createElement('div'); m.className='msg '+who;
+  m.innerHTML=`<div class="who">${names[who]}</div>${text}`;
+  chat.appendChild(m); chat.scrollTop=chat.scrollHeight;
+}
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+function setHR(v){ hr.textContent='♥ '+v; }
+
+function reset(){
+  chat.innerHTML=''; buildSteps(); humans=0; humanCount.textContent='0';
+  watch.className='watch idle'; setHR('72');
+  wbody.innerHTML='<div class="wtitle">wacht op de agent…</div>';
+  showDevice('watch'); pscreen.innerHTML='';
+  document.getElementById('devlabel').textContent='Garmin — nudge';
+  runBtn.disabled=false;
+}
+
+async function buzz(on){ watch.classList.toggle('buzz',on); }
+
+// ---- device switch: Garmin (nudge) → GSM (PostNL-app) ----
+function showDevice(d){
+  watchwrap.style.display = d==='watch' ? 'flex' : 'none';
+  phonewrap.style.display = d==='phone' ? 'flex' : 'none';
+}
+
+const ADDRS = [
+  ['Thuis — Keizersgracht 1', 'standaard'],
+  ['ServicePunt — AH, 200m', 'ophalen'],
+  ['Pakketautomaat — Station', '24/7'],
+];
+const DELIV = [
+  ['Morgen (voor 22:00 besteld)', 'gratis'],
+  ['Vanavond 18–22u', '€6,95'],
+  ['Zaterdag', 'gratis'],
+];
+
+function phoneLogin(){
+  showDevice('phone');
+  pscreen.innerHTML=`
+    <div class="phead">PostNL</div>
+    <div class="pcenter">
+      <div style="font-weight:700">Inloggen bij PostNL</div>
+      <div class="rk" style="color:#6b7280;font-size:11px">via de deeplink · veilig</div>
+      <button class="pbtn" id="plogin" style="margin-top:14px">Log in</button>
+    </div>`;
+}
+
+function phoneCheckout(auto){
+  let a=0, d=0, res;
+  const p=new Promise(r=>{res=r;});
+  function render(){
+    pscreen.innerHTML=`
+      <div class="phead">PostNL Checkout</div>
+      <div class="pbody">
+        <div class="psec">Bezorgen / ophalen</div>
+        ${ADDRS.map((x,i)=>`<div class="prow ${i===a?'sel':''}" data-a="${i}"><span>${x[0]}</span><span class="rk">${x[1]}</span></div>`).join('')}
+        <div class="psec">Bezorgmoment</div>
+        ${DELIV.map((x,i)=>`<div class="prow ${i===d?'sel':''}" data-d="${i}"><span>${x[0]}</span><span class="rk">${x[1]}</span></div>`).join('')}
+        <button class="pbtn" id="ppay">Betalen ${CTX.total.replace('Totaal ','')}</button>
+      </div>`;
+    pscreen.querySelectorAll('[data-a]').forEach(el=>el.onclick=()=>{a=+el.dataset.a;render();});
+    pscreen.querySelectorAll('[data-d]').forEach(el=>el.onclick=()=>{d=+el.dataset.d;render();});
+    document.getElementById('ppay').onclick=()=>{ if(res){const r=res;res=null;r({a,d});} };
+  }
+  render();
+  if(auto) setTimeout(()=>{ if(res){const r=res;res=null;r({a,d});} }, 1100);
+  return p;
+}
+
+function phoneProcessing(){
+  pscreen.innerHTML=`<div class="phead">PostNL</div>
+    <div class="pcenter"><div style="font-weight:700">Betaling verwerken…</div>
+    <div class="rk" style="color:#6b7280;font-size:11px">even geduld</div></div>`;
+}
+function phoneConfirmed(){
+  pscreen.innerHTML=`<div class="phead">PostNL</div>
+    <div class="pcenter"><div class="pbadge">✓</div>
+    <div style="font-weight:700">Order bevestigd</div>
+    <div class="rk" style="color:#6b7280;font-size:11px">PNL-a1b2c3d4</div></div>`;
+}
+
+function waitTap(){
+  return new Promise(resolve=>{
+    wbody.innerHTML=`
+      <div class="wtitle">PostNL Fast Checkout</div>
+      <div class="wproduct">${CTX.product}</div>
+      <div class="wtotal">${CTX.total}</div>
+      <div class="whint">${CTX.deeplink}</div>
+      <div class="whint">→ open op je telefoon om te betalen</div>
+      <div class="wactions">
+        <button class="wbtn pay" id="pay">Open op 📱</button>
+        <button class="wbtn no" id="dismiss">Sluit</button>
+      </div>`;
+    document.getElementById('pay').onclick=()=>resolve(true);
+    document.getElementById('dismiss').onclick=()=>resolve(false);
+  });
+}
+
+const CTX={product:'',total:'',deeplink:'…/deeplink/checkout/PNL-a1b2c3d4'};
+
+async function play(){
+  if(running) return; running=true; reset(); runBtn.disabled=true;
+  try{
+
+  // 1 Intentie
+  setStep(0,'active');
+  say('user','"Ik zoek een cadeau voor mijn moeder" — budget rond €40.'); await wait(700);
+  say('agent','Helder. Ik regel alles zelf tot aan het betalen — dáár tik jij één keer.'); await wait(700);
+  setStep(0,'done');
+
+  // 2 Discovery
+  setStep(1,'active');
+  say('sys','GraphQL: products(search:"cadeau") · magento-acc.pricetracking.net'); await wait(600);
+  say('agent','5 SimpleProducts. Ik filter op voorraad en prijs per variant.'); await wait(700);
+  setStep(1,'done');
+
+  // 3 Voorstel
+  setStep(2,'active');
+  say('agent','1. Zijden Sjaal Botanisch — €39,00  ·  2. Chocolade Proeverij — €29,99  ·  3. Thee Cadeaubox — €22,95'); await wait(800);
+  say('agent','Mijn tip: #1 Zijden Sjaal Botanisch (€39,00).'); await wait(600);
+  setStep(2,'done');
+
+  CTX.product='Zijden Sjaal Botanisch'; CTX.total='Totaal €39,00';
+
+  // 4 Cart (+ oos guardrail) — sessie-cart, NIET GraphQL
+  setStep(3,'active');
+  say('sys','$ POST /checkout/cart/add/  (sessie-cart · PHPSESSID + form_key)'); await wait(600);
+  if(scenario==='oos'){
+    say('pnl','⚠ backend weigert: onvoldoende voorraad voor Indigo blauw (0 beschikbaar)'); await wait(700);
+    say('agent','Voorraad-guardrail sprong aan — ik plaats deze variant niet. Ik zou nu een andere variant of product voorstellen.'); await wait(500);
+    setStep(3,'active'); running=false; runBtn.disabled=false; return;
+  }
+  say('agent','Toegevoegd. Totaal €39,00 — ruim boven de minimale cartwaarde van €5,00. ✓'); await wait(600);
+  setStep(3,'done');
+
+  // 5 Bezorging — PostNL Checkout regelt adres + betaling
+  setStep(4,'active');
+  say('agent','Adres én betaalmethode vul je zo in PostNL Checkout zelf — ik hoef níks van je te weten.'); await wait(700);
+  say('sys','postnl-mcp: calculate_delivery_date · find_locations'); await wait(500);
+  say('agent','Handig om te weten: ServicePunt op ~200m, en besteld voor 22:00 = morgen in huis.'); await wait(600);
+  setStep(4,'done');
+
+  // 6 Checkout init — PostNL Fast Checkout geeft ALLEEN een deeplink terug
+  setStep(5,'active');
+  say('sys','$ POST magento-acc.pricetracking.net/postnl_fastcheckout/checkout/init'); await wait(700);
+  say('pnl','{ orderId: "PNL-a1b2c3d4", checkoutUrl: "…/deeplink/checkout/PNL-a1b2c3d4" }'); await wait(800);
+  say('agent','Ik krijg alléén een deeplink terug — geen betaalrechten, geen kaartgegevens. Die link stuur ik naar jou door.'); await wait(700);
+  setStep(5,'done');
+
+  // 7 HÉT moment — deeplink nudge op de Garmin
+  setStep(6,'active');
+  say('agent','PostNL Fast Checkout staat op je pols. Open de deeplink op je telefoon.'); await wait(500);
+  showDevice('watch'); watch.className='watch'; wbody.innerHTML='<div class="wtitle">deeplink komt binnen…</div>';
+  await buzz(true); setHR('88'); await wait(450); setHR('121'); await wait(600); await buzz(false);
+
+  const opened = await waitTap();     // Garmin: "Open op 📱" of "Sluit"
+  if(!opened){
+    setHR('96');
+    wbody.innerHTML='<div class="wtitle">Checkout gesloten</div><div class="whint">geen order voltooid · niks belast</div>';
+    say('agent','Je sloot de checkout → order niet voltooid, niks belast. Netjes afgebroken.'); await wait(400);
+    running=false; runBtn.disabled=false; return;
+  }
+
+  // ---- SWITCH: Garmin → GSM (PostNL-app) ----
+  say('sys','↪ deeplink opent PostNL-app op je GSM'); await wait(500);
+  document.getElementById('devlabel').textContent='Garmin — doorgestuurd';
+  phoneLogin(); await wait(400);
+  // login zelf is niet het cruciale moment → auto-advance; klikken op 'Log in' mag ook
+  await Promise.race([ wait(900), new Promise(r=>{ const b=document.getElementById('plogin'); if(b) b.onclick=r; }) ]);
+  say('user','(ingelogd bij PostNL — kiest adres + bezorgtype)'); await wait(400);
+
+  const sel = await phoneCheckout(false);   // wacht op de echte 'Betalen'-tik
+  humans += 1; humanCount.textContent=String(humans);   // dé ene checkout = één menselijk moment
+  say('pnl', `Gekozen in PostNL Checkout: ${ADDRS[sel.a][0]} · ${DELIV[sel.d][0]}`); await wait(500);
+  phoneProcessing();
+
+  // async: de agent krijgt de status NIET synchroon terug — hij wacht op PostNL
+  say('agent','Ik heb de betaalstatus niet in de hand. Ik wacht op bevestiging van PostNL (webhook/poll) — ik verzin niks.'); await wait(700);
+  if(scenario==='pending'){
+    say('sys','… poll: order PNL-a1b2c3d4 = PENDING …'); await wait(1300);
+    say('agent','Duurt langer dan verwacht. Ik blijf pollen en stuur je een seintje zodra PostNL bevestigt.'); await wait(800);
+  }
+  say('sys','← webhook: order PNL-a1b2c3d4 = PAID'); await wait(600);
+  phoneConfirmed(); await wait(600);
+  setStep(6,'done');
+
+  // ---- SWITCH terug: GSM → Garmin (tracking) ----
+  say('sys','↩ terug naar de agent · order completed'); await wait(400);
+  showDevice('watch'); setHR('79');
+  wbody.innerHTML='<div class="badge">✓</div><div class="wtitle" style="margin-top:8px">PNL-a1b2c3d4 · onderweg</div><div class="whint">bezorging morgen</div>';
+
+  // 8 Bevestiging
+  setStep(7,'active');
+  say('pnl','Bevestigd ✓  ·  Track & Trace: 3S360A33D17  ·  levering morgen'); await wait(500);
+  say('agent','Klaar! Order PNL-a1b2c3d4, €39,00, tracking 3S360A33D17. Eén checkout van jou, de rest deed ik. 🎉'); await wait(300);
+  setStep(7,'done');
+
+  } catch(e){ say('sys','⚠ demo-fout: '+(e&&e.message||e)); }
+  finally { running=false; runBtn.disabled=false; }
+}
+
+runBtn.onclick=play;
+resetBtn.onclick=()=>{ if(running) return; reset(); };
+reset();
+</script>
+</body>
+</html>
